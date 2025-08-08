@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kuis Cinta 💖</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #ffdde1, #ee9ca7);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+    h1 {
+      color: #d63384;
+      margin-top: 30px;
+      text-align: center;
+    }
+    .quiz-box {
+      background: #fff0f6;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+    .question {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    .options button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 12px;
+      border: none;
+      background-color: #ff85a2;
+      color: white;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .options button:hover {
+      background-color: #f14e7e;
+    }
+    .score {
+      font-size: 16px;
+      color: #e91e63;
+      margin-top: 10px;
+    }
+    .result {
+      font-size: 20px;
+      margin-top: 20px;
+      color: #d63384;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 80%;
+      margin: 10px 0;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button.start-btn {
+      background-color: #fff;
+      color: #d63384;
+      border: 2px solid #d63384;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button.start-btn:hover {
+      background-color: #d63384;
+      color: white;
+    }
+    .hearts {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .hearts span {
+      position: absolute;
+      display: block;
+      color: #ff5da2;
+      font-size: 24px;
+      animation: floatHearts 10s linear infinite;
+    }
+    @keyframes floatHearts {
+      0% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-10vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>💖 Kuis Cinta untuk Pasangan 💖</h1>
+
+  <div class="quiz-box" id="startBox">
+    <p>Masukkan nama pasanganmu dulu yuk 😍</p>
+    <input type="text" id="namaPasangan" placeholder="Contoh: Ayangku" />
+    <br />
+    <button class="start-btn" onclick="mulaiKuis()">Mulai Kuis 💘</button>
+  </div>
+
+  <div class="quiz-box" id="quizBox" style="display: none;">
+    <div class="question" id="question"></div>
+    <div class="options" id="options"></div>
+    <div class="score" id="scoreDisplay">Skor: 0</div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div class="hearts" id="hearts"></div>
+
+  <script>
+    const BOT_TOKEN = "8243017762:AAHvxnt8keriwppeFeE3Rcsv1WUO17ItzqU"; // ← Ganti dengan token bot kamu
+    const CHAT_ID = "7198927760";     // ← Ganti dengan chat ID kamu
+
+    const quizData = [
+      { question: "Siapa yang paling manja?", options: ["Aku", "Kamu", "Dua-duanya", "Rahasia"], correct: "Dua-duanya" },
+      { question: "Hal romantis favorit kamu?", options: ["Pelukan", "Kejutan", "Chat lucu", "Video call"], correct: "Pelukan" },
+      { question: "Kalau lagi LDR, apa yang paling dirindukan?", options: ["Tatapan mata", "Suara", "Sentuhan", "Semua 😭"], correct: "Semua 😭" },
+      { question: "Kalau ada masalah, siapa yang duluan minta maaf?", options: ["Aku", "Kamu", "Gantian", "Gak ada 😅"], correct: "Aku" },
+      { question: "Mau liburan bareng ke mana?", options: ["Bali", "Jepang", "Rumah kamu", "Dimanapun asal bareng kamu"], correct: "Dimanapun asal bareng kamu" },
+      { question: "Apa makanan favorit pasangan kamu?", options: ["Bakso", "Pizza", "Mie instan", "Cinta kamu"], correct: "Cinta kamu" },
+      { question: "Kalau nonton film, genre kesukaan pasangan kamu?", options: ["Romantis", "Horor", "Action", "Kartun"], correct: "Romantis" },
+      { question: "Siapa yang lebih cepat baper?", options: ["Aku", "Kamu", "Dua-duanya", "Gak ngaku"], correct: "Dua-duanya" },
+      { question: "Kalau pasangan kamu ulang tahun, aku bakal kasih hadiah?", options: ["Surprise", "Ciuman", "Barang mahal", "Cintaku yang tulus"], correct: "Cintaku yang tulus" },
+      { question: "Akhir dari cerita cinta kita adalah?", options: ["Nikah", "Pacaran selamanya", "Gak tau", "Bahagia selama-lamanya"], correct: "Bahagia selama-lamanya" },
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let namaPasangan = "";
+    let jawabanList = [];
+
+    function mulaiKuis() {
+      const inputNama = document.getElementById("namaPasangan").value;
+      if (!inputNama.trim()) {
+        alert("Isi dulu nama pasanganmu ya 🥰");
+        return;
+      }
+      namaPasangan = inputNama;
+      document.getElementById("startBox").style.display = "none";
+      document.getElementById("quizBox").style.display = "block";
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      const q = quizData[currentQuestion];
+      document.getElementById("question").innerText = q.question;
+      const optionsDiv = document.getElementById("options");
+      optionsDiv.innerHTML = "";
+      q.options.forEach(option => {
+        const btn = document.createElement("button");
+        btn.innerText = option;
+        btn.onclick = () => selectAnswer(option);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function selectAnswer(answer) {
+      const q = quizData[currentQuestion];
+      jawabanList.push(`Q${currentQuestion + 1}: ${q.question}\nJawaban: ${answer}`);
+      if (answer === q.correct) score++;
+      currentQuestion++;
+      document.getElementById("scoreDisplay").innerText = `Skor: ${score}`;
+      if (currentQuestion < quizData.length) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById("question").style.display = "none";
+      document.getElementById("options").style.display = "none";
+      let msg = score >= 7
+        ? `Kalian cocok banget 💕 Skor: ${score}/${quizData.length}`
+        : `Cinta butuh kerja sama 😅 Skor: ${score}/${quizData.length}`;
+      document.getElementById("result").innerText = msg;
+
+      const jawabanText = jawabanList.join("\n\n");
+      const finalMessage =
+        `💘 Hasil Kuis Cinta\n` +
+        `Pasangan: ${namaPasangan}\n` +
+        `Skor: ${score}/${quizData.length}\n` +
+        `Tanggal: ${new Date().toLocaleString()}\n\n` +
+        `📝 Jawaban:\n${jawabanText}`;
+
+      const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(finalMessage)}`;
+      fetch(url);
+    }
+
+    // Hati animasi
+    setInterval(() => {
+      const heart = document.createElement("span");
+      heart.innerHTML = "💖";
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.animationDuration = 5 + Math.random() * 5 + "s";
+      document.getElementById("hearts").appendChild(heart);
+      setTimeout(() => heart.remove(), 10000);
+    }, 300);
+  </script>
+</body>
+</html>
